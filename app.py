@@ -16,7 +16,6 @@ import time
 # =========================
 st.set_page_config(page_title="AI Matrix - Student Depression Platform", layout="wide")
 
-# CSS Design integration (Style Bleu & Violet Pro)
 st.markdown("""
     <style>
     .main-header {
@@ -54,7 +53,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Banner Université Chouaib Doukkali
 st.markdown("""
     <div class="main-header">
         <h1 style="text-align: center; color: white; margin:0; font-family: 'Segoe UI', sans-serif; font-weight: 900; text-transform: uppercase;">Université Chouaib Doukkali — Faculté des Sciences</h1>
@@ -67,22 +65,21 @@ st.markdown("""
 
 try:
     # =========================
-    # LOAD DATA (Sécurité Chemin Relatif Docker)
+    # LOAD DATA (Sécurité Chemin Cloud / Local)
     # =========================
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(BASE_DIR, "data", "Student Depression Dataset.csv")
 
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
-        # Nettoyage des espaces cachés f les colonnes
         df.columns = df.columns.str.strip()
         df = df.dropna().drop_duplicates()
         if 'id' in df.columns: df = df.drop(columns=['id'])
     else:
-        st.error(f"❌ Fichier introuvable dans le conteneur Docker à l'emplacement : {file_path}")
+        st.error(f"❌ Fichier introuvable à l'emplacement : {file_path}")
         st.stop()
 
-    # --- SÉCURISATION ET RECHERCHE SMART DES COLONNES ---
+    # --- RECHERCHE SMART DES COLONNES ---
     def find_column(possible_names, default_name):
         for col in df.columns:
             if col.lower().strip() in [p.lower().strip() for p in possible_names] or any(p.lower() in col.lower() for p in possible_names):
@@ -94,23 +91,25 @@ try:
     col_pressure = find_column(['Academic Pressure', 'Pressure'], 'Academic Pressure')
     col_cgpa = find_column(['CGPA', 'Note'], 'CGPA')
 
-    # --- SÉCURISATION ULTIME DE L'ERREUR DES LABELS ENVISAGEABLES (ex: 2.0) ---
+    # Nettoyage des labels suspects f la cible (ex: 2.0)
     df[col_target] = pd.to_numeric(df[col_target], errors='coerce')
     df = df[df[col_target].isin([0, 1, 0.0, 1.0])].dropna()
     df[col_target] = df[col_target].astype(int)
 
     # =========================
-    # PROCESSING & ENCODING
+    # PROCESSING & ENCODING AMÉLIORÉ (Swa Object swa String)
     # =========================
     df_encoded = df.copy()
     label_encoders = {}
 
     for col in df_encoded.columns:
-        if df_encoded[col].dtype == "object" and col != col_target:
-            le = LabelEncoder()
-            df_encoded[col] = df_encoded[col].astype(str).str.strip()
-            df_encoded[col] = le.fit_transform(df_encoded[col])
-            label_encoders[col] = le
+        if col != col_target:
+            # CORRECTION : Si la colonne contient du texte (object, string ou category)
+            if df_encoded[col].dtype == "object" or df_encoded[col].dtype == "string" or not np.issubdtype(df_encoded[col].dtype, np.number):
+                le = LabelEncoder()
+                df_encoded[col] = df_encoded[col].astype(str).str.strip()
+                df_encoded[col] = le.fit_transform(df_encoded[col])
+                label_encoders[col] = le
 
     # Features / Target split
     X = df_encoded.drop(col_target, axis=1)
@@ -141,7 +140,7 @@ try:
     best_acc = accuracies[best_model_name]
 
     # =========================
-    # TABS STRUCTURE (L'affichage Pro)
+    # TABS STRUCTURE
     # =========================
     tab1, tab2, tab3 = st.tabs([
         "📊 1. Data Pipeline & Ingestion", 
@@ -171,8 +170,6 @@ try:
     # --- TAB 2: MULTI-MODELS DIAGNOSTIC ---
     with tab2:
         st.markdown("### Évaluation Comparative des Algorithmes")
-        
-        # Affichage des scores
         m1, m2, m3 = st.columns(3)
         for i, (name, score) in enumerate(accuracies.items()):
             cols = [m1, m2, m3]
@@ -181,7 +178,7 @@ try:
         st.write("##")
         cc1, cc2 = st.columns(2)
         with cc1:
-            st.markdown(f"#### Matrice de Confusion — {best_model_name} (Top)")
+            st.markdown(f"#### Matrice de Confusion — {best_model_name}")
             best_preds = trained_models[best_model_name].predict(X_test)
             cm = confusion_matrix(y_test, best_preds)
             fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues',
@@ -196,10 +193,9 @@ try:
 
     # --- TAB 3: SIMULATEUR DYNAMIQUE ---
     with tab3:
-        st.markdown("### Simulateur d'Inférence Algorithmique (Sécurisé)")
+        st.markdown("### Simulateur d'Inférence Algorithmique")
         st.info(f"Le système utilise actuellement le modèle optimal : **{best_model_name}**")
         
-        # Création dynamique des inputs de façon élégante
         user_inputs = []
         cols_ui = st.columns(3)
         
@@ -207,13 +203,11 @@ try:
             current_col = cols_ui[idx % 3]
             with current_col:
                 if col in label_encoders:
-                    # Si c'est catégoriel, afficher les vrais noms textes
                     original_labels = label_encoders[col].classes_
                     selected_text = st.selectbox(f"{col}", original_labels, key=f"sim_{col}")
                     encoded_val = label_encoders[col].transform([selected_text])[0]
                     user_inputs.append(encoded_val)
                 else:
-                    # Si c'est numérique
                     if df[col].dtype == 'float64' or df[col].dtype == 'float32':
                         val = st.slider(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()), key=f"sim_{col}")
                     else:
@@ -223,7 +217,7 @@ try:
         st.write("##")
         if st.button("🚀 Lancer l'Inférence Algorithmique", use_container_width=True):
             with st.spinner("Calcul en cours..."):
-                time.sleep(0.4)
+                time.sleep(0.2)
                 prediction = trained_models[best_model_name].predict([user_inputs])[0]
                 
             if prediction == 1:

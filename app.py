@@ -16,7 +16,7 @@ import time
 # =========================
 st.set_page_config(page_title="MindCare-UCD - Student Depression Platform", layout="wide")
 
-# CSS Design integration (Style Old Gold, Noir & Jaune/Orange pour les graphes)
+# CSS Design integration (Style Old Gold, Noir & Jaune Premium)
 st.markdown("""
     <style>
     .main-header {
@@ -53,7 +53,7 @@ st.markdown("""
         background: linear-gradient(135deg, #C5A059 0%, #947437 100%) !important;
         color: #000000 !important;
     }
-    /* Bouton personnalisé Old Gold */
+    /* Bouton personnalisé Old Gold / Jaune */
     .stButton>button {
         background: linear-gradient(135deg, #FFCC00 0%, #C5A059 100%) !important;
         color: black !important;
@@ -83,6 +83,7 @@ try:
 
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
+        # Nettoyage des espaces cachés f les colonnes
         df.columns = df.columns.str.strip()
         df = df.dropna().drop_duplicates()
         if 'id' in df.columns: df = df.drop(columns=['id'])
@@ -102,25 +103,23 @@ try:
     col_pressure = find_column(['Academic Pressure', 'Pressure'], 'Academic Pressure')
     col_cgpa = find_column(['CGPA', 'Note'], 'CGPA')
 
-    # --- SÉCURISATION DES LABELS DE LA TARGET ---
+    # --- SÉCURISATION ULTIME DE L'ERREUR DES LABELS ENVISAGEABLES (ex: 2.0) ---
     df[col_target] = pd.to_numeric(df[col_target], errors='coerce')
     df = df[df[col_target].isin([0, 1, 0.0, 1.0])].dropna()
     df[col_target] = df[col_target].astype(int)
 
     # =========================
-    # PROCESSING & ENCODING (Sécurisé à 100%)
+    # PROCESSING & ENCODING (Ton code original exact)
     # =========================
     df_encoded = df.copy()
     label_encoders = {}
 
     for col in df_encoded.columns:
-        if col != col_target:
-            # Forcer la conversion de toutes les colonnes de type text ou mixtes en String avant LabelEncoding
-            if df_encoded[col].dtype == "object" or df_encoded[col].dtype == "category":
-                df_encoded[col] = df_encoded[col].astype(str).str.strip()
-                le = LabelEncoder()
-                df_encoded[col] = le.fit_transform(df_encoded[col])
-                label_encoders[col] = le
+        if df_encoded[col].dtype == "object" and col != col_target:
+            le = LabelEncoder()
+            df_encoded[col] = df_encoded[col].astype(str).str.strip()
+            df_encoded[col] = le.fit_transform(df_encoded[col])
+            label_encoders[col] = le
 
     # Features / Target split
     X = df_encoded.drop(col_target, axis=1)
@@ -133,7 +132,7 @@ try:
     # MULTI-MODELS TRAINING
     # =========================
     models = {
-        "Logistic Regression": LogisticRegression(max_iter=2000), # Augmenté au cas où
+        "Logistic Regression": LogisticRegression(max_iter=1000),
         "KNN": KNeighborsClassifier(n_neighbors=5),
         "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42)
     }
@@ -150,11 +149,11 @@ try:
     best_model_name = max(accuracies, key=accuracies.get)
     best_acc = accuracies[best_model_name]
 
-    # Palette de dégradés Jaune -> Orange pour Plotly
+    # Palette Jaune/Orange pour les graphes Plotly
     orange_yellow_scale = ['#FFCC00', '#FF9900', '#FF6600', '#CC3300']
 
     # =========================
-    # TABS STRUCTURE
+    # TABS STRUCTURE (L'affichage Pro)
     # =========================
     tab1, tab2, tab3 = st.tabs([
         "📊 1. Data Pipeline & Ingestion", 
@@ -186,6 +185,7 @@ try:
     with tab2:
         st.markdown("### Évaluation Comparative des Algorithmes")
         
+        # Affichage des scores
         m1, m2, m3 = st.columns(3)
         for i, (name, score) in enumerate(accuracies.items()):
             cols = [m1, m2, m3]
@@ -214,34 +214,9 @@ try:
         st.markdown("### Simulateur d'Inférence Algorithmique (Sécurisé)")
         st.info(f"Le système utilise actuellement le modèle optimal : **{best_model_name}**")
         
+        # Création dynamique des inputs de ton code original
         user_inputs = []
         cols_ui = st.columns(3)
         
         for idx, col in enumerate(X.columns):
-            current_col = cols_ui[idx % 3]
-            with current_col:
-                if col in label_encoders:
-                    original_labels = label_encoders[col].classes_
-                    selected_text = st.selectbox(f"{col}", original_labels, key=f"sim_{col}")
-                    encoded_val = label_encoders[col].transform([selected_text])[0]
-                    user_inputs.append(encoded_val)
-                else:
-                    if df[col].dtype == 'float64' or df[col].dtype == 'float32':
-                        val = st.slider(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()), key=f"sim_{col}")
-                    else:
-                        val = st.slider(f"{col}", int(df[col].min()), int(df[col].max()), int(df[col].mean()), key=f"sim_{col}")
-                    user_inputs.append(val)
-        
-        st.write("##")
-        if st.button("🚀 Lancer l'Inférence Algorithmique", use_container_width=True):
-            with st.spinner("Calcul en cours..."):
-                time.sleep(0.4)
-                prediction = trained_models[best_model_name].predict([user_inputs])[0]
-                
-            if prediction == 1:
-                st.error(f"⚠️ STATUT CRITIQUE DÉTECTÉ — Risque d'effondrement psychologique élevé.")
-            else:
-                st.success(f"✅ STATUT STABLE DÉTECTÉ — Équilibre optimal des indicateurs.")
-
-except Exception as e:
-    st.error(f"Erreur d'exécution système : {e}")
+            current_col = cols_ui

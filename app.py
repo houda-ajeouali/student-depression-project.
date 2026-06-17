@@ -109,7 +109,7 @@ try:
     df[col_target] = df[col_target].astype(int)
 
     # =========================
-    # PROCESSING & ENCODING (Ton code original exact)
+    # PROCESSING & ENCODING
     # =========================
     df_encoded = df.copy()
     label_encoders = {}
@@ -149,9 +149,6 @@ try:
     best_model_name = max(accuracies, key=accuracies.get)
     best_acc = accuracies[best_model_name]
 
-    # Palette Jaune/Orange pour les graphes Plotly
-    orange_yellow_scale = ['#FFCC00', '#FF9900', '#FF6600', '#CC3300']
-
     # =========================
     # TABS STRUCTURE (L'affichage Pro)
     # =========================
@@ -165,10 +162,10 @@ try:
     with tab1:
         st.markdown("### Ingestion Framework & Real-Time Metrics")
         k1, k2, k3, k4 = st.columns(4)
-        with k1: st.markdown(f"<div class='kpi-box'><h5>Volume Stream (HDFS)</h5><h2>{len(df)} Rows</h2><span style='color:#FFCC00;'>Live Dataset</span></div>", unsafe_allow_html=True)
-        with k2: st.markdown(f"<div class='kpi-box'><h5>Meilleur Modèle</h5><h2>{best_model_name}</h2><span style='color:#FF9900;'>Score: {best_acc*100:.1f}%</span></div>", unsafe_allow_html=True)
-        with k3: st.markdown(f"<div class='kpi-box'><h5>Âge Moyen Étudiants</h5><h2>{df[col_age].mean():.1f} Ans</h2><span style='color:#FFCC00;'>Target Population</span></div>", unsafe_allow_html=True)
-        with k4: st.markdown(f"<div class='kpi-box'><h5>Vecteur Dimensions</h5><h2>{X.shape[1]} Features</h2><span style='color:#FF9900;'>Engine Synchronized</span></div>", unsafe_allow_html=True)
+        with k1: st.markdown(f"<div class='kpi-box'><h5>Volume Stream (HDFS)</h5><h2>{len(df)} Rows</h2><span style='color:green;'>Live Dataset</span></div>", unsafe_allow_html=True)
+        with k2: st.markdown(f"<div class='kpi-box'><h5>Meilleur Modèle</h5><h2>{best_model_name}</h2><span style='color:#E0AA3E;'>Score: {best_acc*100:.1f}%</span></div>", unsafe_allow_html=True)
+        with k3: st.markdown(f"<div class='kpi-box'><h5>Âge Moyen Étudiants</h5><h2>{df[col_age].mean():.1f} Ans</h2><span style='color:blue;'>Target Population</span></div>", unsafe_allow_html=True)
+        with k4: st.markdown(f"<div class='kpi-box'><h5>Vecteur Dimensions</h5><h2>{X.shape[1]} Features</h2><span style='color:green;'>Engine Synchronized</span></div>", unsafe_allow_html=True)
         
         st.write("##")
         c1, c2 = st.columns([1.3, 1])
@@ -177,8 +174,7 @@ try:
             st.dataframe(df.head(10), use_container_width=True)
         with c2:
             st.markdown("#### Distribution Réelle de la Cible (Depression)")
-            fig_dep = px.pie(df, names=col_target, hole=0.4, color_discrete_sequence=['#FFCC00', '#FF6600'])
-            fig_dep.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+            fig_dep = px.pie(df, names=col_target, hole=0.4, color_discrete_sequence=px.colors.sequential.Plasma)
             st.plotly_chart(fig_dep, use_container_width=True)
 
     # --- TAB 2: MULTI-MODELS DIAGNOSTIC ---
@@ -197,16 +193,14 @@ try:
             st.markdown(f"#### Matrice de Confusion — {best_model_name} (Top)")
             best_preds = trained_models[best_model_name].predict(X_test)
             cm = confusion_matrix(y_test, best_preds)
-            fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale=orange_yellow_scale,
+            fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale='Blues',
                                x=["Prédit: Sain", "Prédit: Dépressif"], y=["Réel: Sain", "Réel: Dépressif"])
-            fig_cm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
             st.plotly_chart(fig_cm, use_container_width=True)
             
         with cc2:
             st.markdown("#### Comparaison Graphique des Performances")
             df_acc = pd.DataFrame(list(accuracies.items()), columns=['Modèle', 'Accuracy'])
-            fig_bar = px.bar(df_acc, x='Modèle', y='Accuracy', color='Accuracy', color_continuous_scale=orange_yellow_scale)
-            fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+            fig_bar = px.bar(df_acc, x='Modèle', y='Accuracy', color='Accuracy', color_continuous_scale='Viridis')
             st.plotly_chart(fig_bar, use_container_width=True)
 
     # --- TAB 3: SIMULATEUR DYNAMIQUE ---
@@ -214,7 +208,7 @@ try:
         st.markdown("### Simulateur d'Inférence Algorithmique (Sécurisé)")
         st.info(f"Le système utilise actuellement le modèle optimal : **{best_model_name}**")
         
-        # Création dynamique des inputs de ton code original
+        # Création dynamique des inputs de façon élégante
         user_inputs = []
         cols_ui = st.columns(3)
         

@@ -219,4 +219,32 @@ try:
         cols_ui = st.columns(3)
         
         for idx, col in enumerate(X.columns):
-            current_col = cols_ui
+            current_col = cols_ui[idx % 3]
+            with current_col:
+                if col in label_encoders:
+                    # Si c'est catégoriel, afficher les vrais noms textes
+                    original_labels = label_encoders[col].classes_
+                    selected_text = st.selectbox(f"{col}", original_labels, key=f"sim_{col}")
+                    encoded_val = label_encoders[col].transform([selected_text])[0]
+                    user_inputs.append(encoded_val)
+                else:
+                    # Si c'est numérique
+                    if df[col].dtype == 'float64' or df[col].dtype == 'float32':
+                        val = st.slider(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()), key=f"sim_{col}")
+                    else:
+                        val = st.slider(f"{col}", int(df[col].min()), int(df[col].max()), int(df[col].mean()), key=f"sim_{col}")
+                    user_inputs.append(val)
+        
+        st.write("##")
+        if st.button("🚀 Lancer l'Inférence Algorithmique", use_container_width=True):
+            with st.spinner("Calcul en cours..."):
+                time.sleep(0.4)
+                prediction = trained_models[best_model_name].predict([user_inputs])[0]
+                
+            if prediction == 1:
+                st.error(f"⚠️ STATUT CRITIQUE DÉTECTÉ — Risque d'effondrement psychologique élevé.")
+            else:
+                st.success(f"✅ STATUT STABLE DÉTECTÉ — Équilibre optimal des indicateurs.")
+
+except Exception as e:
+    st.error(f"Erreur d'exécution système : {e}")

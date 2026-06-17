@@ -14,7 +14,7 @@ import time
 # =========================
 # CONFIG & DESIGN (UCD PLATFORM)
 # =========================
-st.set_page_config(page_title="AI Matrix - Student Depression Platform", layout="wide")
+st.set_page_config(page_title="MindCare-UCD - Student Depression Platform", layout="wide")
 
 # CSS Design integration (Style Old Gold, Noir & Jaune/Orange pour les graphes)
 st.markdown("""
@@ -63,11 +63,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Banner Université Chouaib Doukkali
+# Banner Université Chouaib Doukkali - MindCare-UCD
 st.markdown("""
     <div class="main-header">
         <h1 style="text-align: center; color: white; margin:0; font-family: 'Segoe UI', sans-serif; font-weight: 900; text-transform: uppercase;">Université Chouaib Doukkali — Faculté des Sciences</h1>
-        <h2 style="text-align: center; color: #C5A059; margin:10px 0 0 0; font-family: 'Segoe UI', sans-serif; font-weight: 700;">PLATEFORME EXPERTE DE PREDICTION & COMPUTING BIG DATA</h2>
+        <h2 style="text-align: center; color: #C5A059; margin:10px 0 0 0; font-family: 'Segoe UI', sans-serif; font-weight: 700;">MindCare-UCD — PLATEFORME EXPERTE DE PREDICTION & COMPUTING BIG DATA</h2>
         <div style="text-align: center; margin-top: 15px; color: #e1e1e1; font-size: 1.1rem;">
             <span>Module : <b>Data Science & Machine Learning</b></span> | <span>Encadré par : <b style="color: #FFCC00;">Monsieur Aaroud</b></span>
         </div>
@@ -83,7 +83,6 @@ try:
 
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
-        # Nettoyage des espaces cachés f les colonnes
         df.columns = df.columns.str.strip()
         df = df.dropna().drop_duplicates()
         if 'id' in df.columns: df = df.drop(columns=['id'])
@@ -103,23 +102,25 @@ try:
     col_pressure = find_column(['Academic Pressure', 'Pressure'], 'Academic Pressure')
     col_cgpa = find_column(['CGPA', 'Note'], 'CGPA')
 
-    # --- SÉCURISATION ULTIME DE L'ERREUR DES LABELS ENVISAGEABLES (ex: 2.0) ---
+    # --- SÉCURISATION DES LABELS DE LA TARGET ---
     df[col_target] = pd.to_numeric(df[col_target], errors='coerce')
     df = df[df[col_target].isin([0, 1, 0.0, 1.0])].dropna()
     df[col_target] = df[col_target].astype(int)
 
     # =========================
-    # PROCESSING & ENCODING
+    # PROCESSING & ENCODING (Sécurisé à 100%)
     # =========================
     df_encoded = df.copy()
     label_encoders = {}
 
     for col in df_encoded.columns:
-        if df_encoded[col].dtype == "object" and col != col_target:
-            le = LabelEncoder()
-            df_encoded[col] = df_encoded[col].astype(str).str.strip()
-            df_encoded[col] = le.fit_transform(df_encoded[col])
-            label_encoders[col] = le
+        if col != col_target:
+            # Forcer la conversion de toutes les colonnes de type text ou mixtes en String avant LabelEncoding
+            if df_encoded[col].dtype == "object" or df_encoded[col].dtype == "category":
+                df_encoded[col] = df_encoded[col].astype(str).str.strip()
+                le = LabelEncoder()
+                df_encoded[col] = le.fit_transform(df_encoded[col])
+                label_encoders[col] = le
 
     # Features / Target split
     X = df_encoded.drop(col_target, axis=1)
@@ -132,7 +133,7 @@ try:
     # MULTI-MODELS TRAINING
     # =========================
     models = {
-        "Logistic Regression": LogisticRegression(max_iter=1000),
+        "Logistic Regression": LogisticRegression(max_iter=2000), # Augmenté au cas où
         "KNN": KNeighborsClassifier(n_neighbors=5),
         "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42)
     }
@@ -153,7 +154,7 @@ try:
     orange_yellow_scale = ['#FFCC00', '#FF9900', '#FF6600', '#CC3300']
 
     # =========================
-    # TABS STRUCTURE (L'affichage Pro)
+    # TABS STRUCTURE
     # =========================
     tab1, tab2, tab3 = st.tabs([
         "📊 1. Data Pipeline & Ingestion", 
@@ -177,7 +178,6 @@ try:
             st.dataframe(df.head(10), use_container_width=True)
         with c2:
             st.markdown("#### Distribution Réelle de la Cible (Depression)")
-            # Pie chart avec nuances Jaune et Orange
             fig_dep = px.pie(df, names=col_target, hole=0.4, color_discrete_sequence=['#FFCC00', '#FF6600'])
             fig_dep.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
             st.plotly_chart(fig_dep, use_container_width=True)
@@ -186,7 +186,6 @@ try:
     with tab2:
         st.markdown("### Évaluation Comparative des Algorithmes")
         
-        # Affichage des scores
         m1, m2, m3 = st.columns(3)
         for i, (name, score) in enumerate(accuracies.items()):
             cols = [m1, m2, m3]
@@ -198,7 +197,6 @@ try:
             st.markdown(f"#### Matrice de Confusion — {best_model_name} (Top)")
             best_preds = trained_models[best_model_name].predict(X_test)
             cm = confusion_matrix(y_test, best_preds)
-            # Matrice teintée en dégradé Orange-Jaune progressif
             fig_cm = px.imshow(cm, text_auto=True, color_continuous_scale=orange_yellow_scale,
                                x=["Prédit: Sain", "Prédit: Dépressif"], y=["Réel: Sain", "Réel: Dépressif"])
             fig_cm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
@@ -207,7 +205,6 @@ try:
         with cc2:
             st.markdown("#### Comparaison Graphique des Performances")
             df_acc = pd.DataFrame(list(accuracies.items()), columns=['Modèle', 'Accuracy'])
-            # Histogramme utilisant le dégradé Jaune/Orange
             fig_bar = px.bar(df_acc, x='Modèle', y='Accuracy', color='Accuracy', color_continuous_scale=orange_yellow_scale)
             fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
             st.plotly_chart(fig_bar, use_container_width=True)
@@ -217,7 +214,6 @@ try:
         st.markdown("### Simulateur d'Inférence Algorithmique (Sécurisé)")
         st.info(f"Le système utilise actuellement le modèle optimal : **{best_model_name}**")
         
-        # Création dynamique des inputs de façon élégante
         user_inputs = []
         cols_ui = st.columns(3)
         
@@ -225,13 +221,11 @@ try:
             current_col = cols_ui[idx % 3]
             with current_col:
                 if col in label_encoders:
-                    # Si c'est catégoriel, afficher les vrais noms textes
                     original_labels = label_encoders[col].classes_
                     selected_text = st.selectbox(f"{col}", original_labels, key=f"sim_{col}")
                     encoded_val = label_encoders[col].transform([selected_text])[0]
                     user_inputs.append(encoded_val)
                 else:
-                    # Si c'est numérique
                     if df[col].dtype == 'float64' or df[col].dtype == 'float32':
                         val = st.slider(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()), key=f"sim_{col}")
                     else:

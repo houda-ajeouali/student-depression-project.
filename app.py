@@ -69,7 +69,7 @@ st.markdown("""
         <h1 style="text-align: center; color: white; margin:0; font-family: 'Segoe UI', sans-serif; font-weight: 900; text-transform: uppercase;">Université Chouaib Doukkali — Faculté des Sciences</h1>
         <h2 style="text-align: center; color: #C5A059; margin:10px 0 0 0; font-family: 'Segoe UI', sans-serif; font-weight: 700;">MindCare-UCD — PLATEFORME EXPERTE DE PREDICTION & COMPUTING BIG DATA</h2>
         <div style="text-align: center; margin-top: 15px; color: #e1e1e1; font-size: 1.1rem;">
-            <span>Module : <b>Data Science & Machine Learning</b></span> | <span>Encadré par : <b style="color: #FFCC00;">Monsieur Aaroud</b></span>
+            <span>Module : <b>Data Science & Machine Learning</b></span> |<span>Realisé par : <b>Ajeouali Houda&& Bahi Ismail</b></span>|<span>Filière : <b>IA S6</b></span> |<span>Encadré par : <b style="color: #FFCC00;">Monsieur Aaroud</b></span>
         </div>
     </div>
 """, unsafe_allow_html=True)
